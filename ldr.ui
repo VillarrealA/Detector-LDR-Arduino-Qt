@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>740</width><height>530</height></rect></property>
+  <property name="windowTitle"><string>Instrumentación Biomédica | Detector óptico LDR</string></property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item><widget class="QLabel" name="labelTitulo"><property name="text"><string>Detección de una fuente luminosa mediante LDR</string></property><property name="alignment"><set>Qt::AlignCenter</set></property><property name="styleSheet"><string notr="true">font-size: 19px; font-weight: bold; color: #12345A;</string></property></widget></item>
+    <item><layout class="QHBoxLayout" name="horizontalLayoutPort">
+     <item><widget class="QLabel" name="labelPuerto"><property name="text"><string>Puerto:</string></property></widget></item>
+     <item><widget class="QComboBox" name="comboPuerto"/></item>
+     <item><widget class="QPushButton" name="btnActualizar"><property name="text"><string>Actualizar</string></property></widget></item>
+     <item><widget class="QPushButton" name="btnConectar"><property name="text"><string>Conectar</string></property></widget></item>
+    </layout></item>
+    <item><widget class="QLabel" name="labelConexion"><property name="text"><string>Sin conexión</string></property><property name="alignment"><set>Qt::AlignCenter</set></property></widget></item>
+    <item><layout class="QHBoxLayout" name="horizontalLayoutDatos">
+     <item><widget class="QGroupBox" name="grupoReferencia"><property name="title"><string>Referencia: LED de interés</string></property>
+       <layout class="QVBoxLayout" name="verticalLayoutRef">
+        <item><widget class="QLabel" name="labelReferencia"><property name="text"><string>—</string></property><property name="alignment"><set>Qt::AlignCenter</set></property><property name="styleSheet"><string notr="true">font-size: 23px; font-weight: bold;</string></property></widget></item>
+        <item><widget class="QPushButton" name="btnLed"><property name="text"><string>Encender LED</string></property><property name="enabled"><bool>false</bool></property></widget></item>
+       </layout></widget></item>
+     <item><widget class="QGroupBox" name="grupoMedicion"><property name="title"><string>Lectura de la LDR (ADC)</string></property>
+       <layout class="QVBoxLayout" name="verticalLayoutMed">
+        <item><widget class="QLabel" name="labelMedicion"><property name="text"><string>—</string></property><property name="alignment"><set>Qt::AlignCenter</set></property><property name="styleSheet"><string notr="true">font-size: 30px; font-weight: bold; color: #12345A;</string></property></widget></item>
+        <item><layout class="QHBoxLayout" name="horizontalLayoutUmbral">
+          <item><widget class="QLabel" name="labelUmbral"><property name="text"><string>Umbral ADC:</string></property></widget></item>
+          <item><widget class="QSpinBox" name="spinUmbral"><property name="maximum"><number>1023</number></property><property name="value"><number>500</number></property></widget></item>
+        </layout></item>
+       </layout></widget></item>
+    </layout></item>
+    <item><widget class="QGroupBox" name="grupoDecision"><property name="title"><string>Decisión del detector (no es la referencia)</string></property>
+      <layout class="QVBoxLayout" name="verticalLayoutDecision">
+       <item><widget class="QLabel" name="labelDecision"><property name="text"><string>SIN DATOS</string></property><property name="alignment"><set>Qt::AlignCenter</set></property><property name="minimumSize"><size><width>0</width><height>68</height></size></property><property name="styleSheet"><string notr="true">font-size: 28px; font-weight: bold; background: #EAF1F8; border-radius: 7px; color: #12345A;</string></property></widget></item>
+      </layout></widget></item>
+    <item><layout class="QHBoxLayout" name="horizontalLayoutAcciones">
+      <item><widget class="QPushButton" name="btnEvaluar"><property name="text"><string>Iniciar evaluación (fijar umbral)</string></property><property name="enabled"><bool>false</bool></property></widget></item>
+      <item><widget class="QPushButton" name="btnRegistrar"><property name="text"><string>Registrar ensayo</string></property><property name="enabled"><bool>false</bool></property></widget></item>
+      <item><widget class="QPushButton" name="btnFinalizar"><property name="text"><string>Finalizar evaluación</string></property><property name="enabled"><bool>false</bool></property></widget></item>
+    </layout></item>
+    <item><widget class="QLabel" name="labelModo"><property name="text"><string>Modo: calibración (puede cambiar el umbral)</string></property></widget></item>
+    <item><widget class="QLabel" name="labelConteos"><property name="text"><string>VP: 0     FN: 0     FP: 0     VN: 0</string></property><property name="alignment"><set>Qt::AlignCenter</set></property><property name="styleSheet"><string notr="true">font-size: 15px; font-weight: bold;</string></property></widget></item>
+    <item><widget class="QLabel" name="labelArchivo"><property name="text"><string>Los ensayos registrados se guardarán en CSV.</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
