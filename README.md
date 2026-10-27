@@ -13,13 +13,11 @@ El objetivo no es medir una condición clínica: es evaluar una **decisión de d
 | `ldr_arduino.ino` | Controla el LED en D8, lee la LDR en A0 y envía los datos por puerto serie. |
 | `ldr.ui` | Diseño editable de la interfaz en Qt Designer. |
 | `app_ldr.py` | Interfaz en Python, lectura del puerto serie, decisión de detección y registro CSV. |
-| `Diapositivas_codigo_LDR.tex` | Dos diapositivas Beamer de apoyo para la clase. |
 | `README.md` | Esta guía. |
-| `ui_ldr.py` | Archivo **generado** desde `ldr.ui` antes de ejecutar la aplicación; no se edita a mano. |
 
 ## Material necesario
 
-- Arduino UNO R4 WiFi (o placa compatible con lectura analógica, ajustando el código si es necesario).
+- Arduino (o placa compatible con lectura analógica, ajustando el código si es necesario).
 - LDR y resistencia de **10 kΩ**.
 - LED de interés y resistencia de **330 Ω**.
 - Protoboard, cables y conexión USB.
@@ -60,7 +58,7 @@ El programa Arduino configura una resolución de **10 bits**: valores ADC entre 
 3. Si se desea editar la interfaz, abrirla en Qt Designer:
 
    ```bash
-   pyside6-designer ldr.ui
+   designer ldr.ui
    ```
 
 4. Generar el archivo Python a partir del diseño (este paso se repite si se modifica `ldr.ui`):
