@@ -24,7 +24,6 @@ void setup() {
   pinMode(PIN_LED, OUTPUT);
   digitalWrite(PIN_LED, LOW);
   Serial.begin(115200);
-  analogReadResolution(10); // UNO: la resolución se fija en 10 bits para usar rango 0--1023.
 }
 
 void loop() {

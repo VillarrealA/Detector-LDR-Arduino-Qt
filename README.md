@@ -1,35 +1,63 @@
-# Práctica: detector óptico con LDR y Qt Designer
+# Detector óptico LED–LDR: adquisición, curvas ROC y precisión–recall
 
-**Instrumentación Biomédica · Sensibilidad y especificidad**
+**Instrumentación Biomédica | Práctica con Arduino Mega y Python**
 
-Esta práctica implementa un detector sencillo que intenta identificar si un **LED de interés está encendido**, aun cuando exista iluminación ambiental o una fuente luminosa interferente. Se adquiere la respuesta de una fotorresistencia (LDR) con Arduino y se visualiza mediante una interfaz gráfica construida con **Qt Designer y PySide6**.
+En esta práctica se construye un detector óptico que intenta identificar si un LED está encendido mediante la lectura de una fotorresistencia (LDR). Primero se adquieren datos con el sensor sin protección óptica (**diseño A**); después se añade un capuchón o tubo opaco (**diseño B**) para intentar reducir el efecto de la luz ambiental. Se comparan ambos diseños mediante matrices de confusión, curvas ROC, curvas precisión–recall y criterios de selección de umbral.
 
-El objetivo no es medir una condición clínica: es evaluar una **decisión de detección** mediante una referencia conocida y construir una matriz de confusión con verdaderos positivos (VP), falsos negativos (FN), falsos positivos (FP) y verdaderos negativos (VN).
+El capuchón es una **hipótesis de mejora**, no una garantía. El objetivo es comprobar con mediciones si la modificación aumenta la capacidad del detector para separar las dos clases.
+
+## Objetivos
+
+- Adquirir lecturas ADC de un detector LED–LDR y registrar una referencia conocida.
+- Diferenciar el estado real del LED de la decisión que produce el detector.
+- Construir e interpretar sensibilidad, especificidad y matriz de confusión.
+- Comparar curvas ROC y PR para dos configuraciones físicas.
+- Calcular e interpretar AUC ROC, average precision (AP) e índice de Youden.
+- Seleccionar y justificar un umbral de operación sin confundirlo con el AUC.
 
 ## Archivos
 
+```text
+Detector-LDR-Arduino-Qt/
+├── README.md
+└── Practica_LDR/
+    ├── ldr_arduino/
+    │   └── ldr_arduino.ino
+    ├── app_ldr.py
+    ├── ldr.ui
+    ├── ui_ldr.py
+    ├── analizar_ldr_roc.py
+    ├── comparar_diseno_ldr.py
+    └── datos_simulados/
+        ├── diseno_A_SIMULADO.csv
+        └── diseno_B_SIMULADO.csv
+```
+
 | Archivo | Función |
 | --- | --- |
-| `ldr_arduino.ino` | Controla el LED en D8, lee la LDR en A0 y envía los datos por puerto serie. |
+| `ldr_arduino/ldr_arduino.ino` | Controla el LED (D8), lee el LDR (A0) y transmite datos por puerto serie. |
 | `ldr.ui` | Diseño editable de la interfaz en Qt Designer. |
-| `app_ldr.py` | Interfaz en Python, lectura del puerto serie, decisión de detección y registro CSV. |
-| `README.md` | Esta guía. |
+| `ui_ldr.py` | Código de interfaz generado con `pyside6-uic`. Si no está incluido, se puede regenerar. |
+| `app_ldr.py` | Interfaz gráfica para adquirir ensayos y exportarlos a CSV. |
+| `analizar_ldr_roc.py` | Analiza un diseño: distribución ADC, ROC, PR, AUC, AP y tabla de umbrales. |
+| `comparar_diseno_ldr.py` | Compara los archivos de ambos diseños. |
+| `datos_simulados/*.csv` | Datos **ficticios**, 32 ensayos por diseño, para practicar o utilizarlos como respaldo. |
 
-## Material necesario
+## Materiales
 
-- Arduino (o placa compatible con lectura analógica, ajustando el código si es necesario).
+- Arduino **Mega 2560**, cable USB y computadora.
+- LED y resistencia de **330 Ω**.
 - LDR y resistencia de **10 kΩ**.
-- LED de interés y resistencia de **330 Ω**.
-- Protoboard, cables y conexión USB.
-- Fuente de luz adicional (linterna u otro LED) para introducir interferencia.
-- Computadora con Python, PySide6 y pyserial.
+- Protoboard y cables.
+- Linterna u otra fuente luminosa independiente, para generar interferencia.
+- Material opaco para el capuchón o tubo de protección.
 
 ## Conexiones
 
 ```text
-+5 V ── LDR ──┬── A0 (Arduino)
++5 V ── LDR ──┬── A0 (Arduino Mega)
               │
-           10 kΩ
+             10 kΩ
               │
              GND
 
@@ -37,125 +65,104 @@ D8 ── 330 Ω ── ánodo del LED
                cátodo ── GND
 ```
 
-En esta conexión, la lectura de A0 **aumenta al aumentar la iluminación**:
+Con este divisor, las cuentas ADC aumentan al aumentar la iluminación. El **Arduino Mega mide 0–1023 (10 bits)** con `analogRead(A0)`; **no** utilicen `analogReadResolution(10)` en el sketch para Mega.
 
-\[
-V_{A0}=V_{cc}\frac{10\,\mathrm{k}\Omega}{R_{LDR}+10\,\mathrm{k}\Omega}.
-\]
+## Preparación del software
 
-El programa Arduino configura una resolución de **10 bits**: valores ADC entre **0 y 1023**. La luz interferente debe ser independiente del LED controlado por D8.
+Instalar Python y las dependencias:
 
-## Preparación del software (Windows y Conda)
-
-1. Abrir `ldr_arduino.ino` en Arduino IDE, seleccionar la placa y el puerto correspondiente y cargar el programa. **Cerrar el monitor serie** antes de utilizar la interfaz.
-2. Abrir una terminal en esta carpeta y activar el entorno:
-
-   ```bash
-   conda activate myenv
-   python -m pip install PySide6 pyserial
-   ```
-
-3. Si se desea editar la interfaz, abrirla en Qt Designer:
-
-   ```bash
-   designer ldr.ui
-   ```
-
-4. Generar el archivo Python a partir del diseño (este paso se repite si se modifica `ldr.ui`):
-
-   ```bash
-   pyside6-uic ldr.ui -o ui_ldr.py
-   ```
-
-5. Ejecutar la aplicación:
-
-   ```bash
-   python app_ldr.py
-   ```
-
-6. Seleccionar el puerto de Arduino (por ejemplo, `COM3`) y pulsar **Conectar**.
-
-> **Nota:** Si Arduino IDE indica que el puerto está ocupado, cerrar `app_ldr.py` y cualquier otro programa que esté utilizando ese puerto. Para evitar problemas con múltiples instancias de `QApplication` en Spyder, se recomienda ejecutar la aplicación desde una terminal.
-
-## Funcionamiento
-
-Arduino transmite aproximadamente cada **100 ms** dos valores separados por coma:
-
-```text
-estado_LED,lectura_A0
-1,684
-0,412
+```bash
+python -m pip install PySide6 pyserial numpy matplotlib
 ```
 
-- `estado_LED`: **referencia programada** (`1` = encendido, `0` = apagado).
-- `lectura_A0`: señal medida con la LDR, de `0` a `1023`.
-- La interfaz decide **DETECTADO** cuando `ADC > umbral`; en caso contrario muestra **NO DETECTADO**.
+En Arduino IDE, seleccionar **Arduino Mega or Mega 2560**, elegir el puerto COM y cargar `Practica_LDR/ldr_arduino/ldr_arduino.ino`. Cerrar el monitor serie antes de utilizar la interfaz.
 
-La referencia **no** se obtiene de la LDR: proviene del estado del LED ordenado por Arduino. Antes de iniciar, verificar que el LED físico responda a los comandos.
+Para modificar el diseño Qt (opcional), desde `Practica_LDR/`:
 
-## Procedimiento de laboratorio
-
-### 1. Exploración y ajuste
-
-- Encender y apagar el LED desde la interfaz.
-- Observar los valores ADC con distintas distancias e intensidades de iluminación.
-- Introducir luz interferente mientras el LED de interés está apagado.
-- Proponer y ajustar un **umbral de detección** usando únicamente estas pruebas preliminares.
-
-### 2. Evaluación experimental
-
-1. Pulsar **Iniciar evaluación**: el umbral queda bloqueado.
-2. Realizar ensayos con LED encendido y apagado, incluyendo situaciones fáciles y difíciles de distinguir (por ejemplo, señal débil o interferencia intensa).
-3. Esperar a que se estabilice la lectura y pulsar **Registrar ensayo** una sola vez por ensayo definido. La aplicación espera al menos **0.7 s** después de cambiar el LED para habilitar el registro.
-4. Completar una cantidad acordada de ensayos positivos y negativos; no repetir lecturas consecutivas de una condición fija como si fueran ensayos independientes.
-5. Pulsar **Finalizar evaluación** y conservar el archivo CSV generado.
-
-Las condiciones difíciles favorecen los errores de clasificación, pero **no se deben inventar falsos positivos ni falsos negativos** si no aparecen en los registros reales.
-
-## Interpretación de la matriz de confusión
-
-| Referencia real | Decisión de la interfaz | Categoría |
-| --- | --- | --- |
-| LED encendido | Detectado | VP |
-| LED encendido | No detectado | FN |
-| LED apagado | Detectado | FP |
-| LED apagado | No detectado | VN |
-
-\[
-\mathrm{Sensibilidad}=\frac{VP}{VP+FN},\qquad
-\mathrm{Especificidad}=\frac{VN}{VN+FP}.
-\]
-
-**Interpretación:** el sistema evalúa la capacidad de identificar el **estado del LED de interés**, no la calidad de una medición clínica.
-
-## Archivos de resultados
-
-La aplicación guarda un archivo con nombre similar a:
-
-```text
-ensayos_ldr_20261023_133000.csv
+```bash
+pyside6-uic ldr.ui -o ui_ldr.py
 ```
 
-Columnas del CSV:
+Para ejecutar la interfaz, desde `Practica_LDR/`:
+
+```bash
+python app_ldr.py
+```
+
+Si se trabaja desde Spyder, es recomendable ejecutar la aplicación Qt desde una terminal para evitar instancias duplicadas de `QApplication`.
+
+## Adquisición: dos diseños
+
+**Diseño A — Sin capuchón.** Realizar 32 ensayos: 16 con el LED encendido (`led_referencia=1`) y 16 apagado (`led_referencia=0`). Incluir condiciones de señal intensa/débil y poca/mucha iluminación interferente, siguiendo las indicaciones del profesor. Exportar el CSV desde `app_ldr.py` y guardarlo como `diseno_A.csv`.
+
+**Diseño B — Con capuchón.** Colocar la protección óptica y repetir otros 32 ensayos siguiendo el mismo protocolo, procurando mantener las condiciones comparables. Guardar el archivo como `diseno_B.csv`.
+
+**Importante:** el estado del LED es la referencia experimental; la lectura del LDR no debe utilizarse para inventar o modificar las etiquetas reales. Registrar un ensayo por condición definida y no presentar mediciones consecutivas como ensayos independientes sin justificación. No alterar datos reales para producir una mejora artificial.
+
+## Formato de los datos
+
+La interfaz guarda columnas como:
 
 ```csv
 ensayo,hora,led_referencia,adc_ldr,umbral_adc,decision_detectado,categoria
-1,2026-10-23T13:30:00,1,730,500,1,VP
-2,2026-10-23T13:30:07,0,680,500,1,FP
 ```
 
-*Las dos filas anteriores son ejemplos ilustrativos, no mediciones experimentales.*
+Para construir las curvas se usan principalmente **`led_referencia`** (estado real) y **`adc_ldr`** (lectura). El umbral guardado durante la adquisición no limita los umbrales que pueden explorarse posteriormente al calcular una ROC o PR.
 
-Guardar los CSV de forma separada para los ensayos de **selección** y **validación** del umbral. Estas mediciones se pueden reutilizar posteriormente para construir curvas **ROC** y **precisión–recall**.
+En `datos_simulados/` hay archivos claramente identificados como **SIMULADOS**, para quienes necesiten practicar el análisis si la adquisición real falla. No deben describirse como mediciones obtenidas en el laboratorio.
 
-## Recomendaciones
+## Análisis individual
 
-- Mantener la misma geometría de medición durante cada serie de ensayos, salvo cuando esa variable forme parte del protocolo.
-- Fijar el umbral **antes** de evaluar los ensayos que se utilizarán para reportar desempeño.
-- Registrar las condiciones experimentales que no aparecen en el CSV: distancia, orientación, iluminación ambiental y observaciones.
-- Si se desea una evaluación ciega, una persona puede controlar la secuencia de LED y otra interpretar las decisiones sin ver la referencia en pantalla.
-- No subir registros que contengan datos personales si más adelante se adapta la práctica para señales fisiológicas.
+Abrir una terminal dentro de `Practica_LDR/` y ejecutar:
 
----
+```bash
+python analizar_ldr_roc.py diseno_A.csv --salida resultados_A
+python analizar_ldr_roc.py diseno_B.csv --salida resultados_B
+```
 
-**Curso:** Instrumentación Biomédica · Material didáctico para adquisición de datos, clasificación y evaluación de detectores.
+Para trabajar con los archivos de respaldo:
+
+```bash
+python analizar_ldr_roc.py datos_simulados/diseno_A_SIMULADO.csv --salida resultados_A_simulados
+python analizar_ldr_roc.py datos_simulados/diseno_B_SIMULADO.csv --salida resultados_B_simulados
+```
+
+Cada ejecución genera la distribución ADC, la curva ROC, la curva PR y `tabla_umbrales.csv`. La regla de decisión es **detectado si `ADC > umbral`**.
+
+**Compatibilidad con NumPy:** si aparece `AttributeError: module 'numpy' has no attribute 'trapezoid'`, reemplazar `np.trapezoid(...)` por `np.trapz(...)` en versiones anteriores a NumPy 2.0; alternativamente, usar una selección compatible con ambas versiones.
+
+## Comparación de ambos diseños
+
+Con los CSV experimentales:
+
+```bash
+python comparar_diseno_ldr.py diseno_A.csv diseno_B.csv
+```
+
+Con los datos simulados:
+
+```bash
+python comparar_diseno_ldr.py datos_simulados/diseno_A_SIMULADO.csv datos_simulados/diseno_B_SIMULADO.csv
+```
+
+*Estos comandos suponen que `comparar_diseno_ldr.py` acepta dos rutas posicionales. Si la versión distribuida tiene opciones adicionales, revisar `python comparar_diseno_ldr.py --help`.*
+
+Comparar como mínimo:
+
+- Distribución de ADC para LED encendido y apagado.
+- Curvas ROC y sus AUC.
+- Curvas precisión–recall y sus AP.
+- Máximo índice de Youden, `J = sensibilidad + especificidad - 1`.
+- Umbral de operación propuesto para cada diseño, justificando los errores que se desean evitar.
+
+Un mayor AUC o AP indica mejor discriminación en los datos evaluados, **no** que cualquier umbral sea adecuado. Un umbral seleccionado con un conjunto de datos debe probarse, idealmente, con ensayos nuevos e independientes.
+
+## Entregables sugeridos
+
+1. Archivos CSV originales de ambos diseños, o indicación explícita de que se utilizaron los simulados.
+2. Gráficas ROC y PR comparativas, más las distribuciones ADC.
+3. Tabla con AUC, AP y máximo índice de Youden por diseño.
+4. Umbral elegido para cada configuración, acompañado de sensibilidad, especificidad y precisión.
+5. Conclusión breve: ¿el capuchón mejoró realmente el detector?, ¿qué evidencia lo respalda?, ¿qué limitaciones tiene el experimento?
+
+**Curso:** Instrumentación Biomédica. Material didáctico; el detector LED–LDR es una analogía para estudiar evaluación instrumental, no un dispositivo de diagnóstico clínico.
